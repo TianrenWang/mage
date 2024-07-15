@@ -16,7 +16,7 @@ public class WrongCodeUsageOptimizer extends BaseTreeOptimizer {
     @Override
     public void filter(Game game, List<Ability> actions, List<Ability> actionsToRemove) {
         // runtime check: pass ability must be all the time
-        if (actions.stream().filter(a -> a instanceof PassAbility).count() != 1) {
+        if (actions.stream().filter(a -> a instanceof PassAbility).count() > 1) {
             throw new IllegalArgumentException("Wrong code usage. AI's actions list must contains only 1 instance of PassAbility");
         }
     }
