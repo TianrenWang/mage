@@ -1712,7 +1712,7 @@ public class GameState implements Serializable, Copyable<GameState> {
         Iterator<Player> playerIterator = players.iterator();
         while (playerIterator.hasNext()) {
             Player currentPlayer = playerIterator.next();
-            sb.append(currentPlayer.getName() + "\\n");
+            sb.append(currentPlayer.getName() + " - Life: " + currentPlayer.getLife() + "\\n");
 
             // Get Hand
             String handCardInfo = currentPlayer.getHand().getCards(game).stream()
@@ -1769,7 +1769,7 @@ public class GameState implements Serializable, Copyable<GameState> {
                 for (Map.Entry<String, Integer> entry : cardCount.entrySet()) {
                     String cardName = entry.getKey();
                     Integer count = entry.getValue();
-                    libraryBuilder.append(cardName + " * " + count + ";");
+                    libraryBuilder.append(cardName + " * " + count + "; ");
                 }
                 libraryCardInfo = libraryBuilder.toString();
             }
