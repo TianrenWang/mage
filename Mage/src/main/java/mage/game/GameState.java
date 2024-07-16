@@ -1748,7 +1748,7 @@ public class GameState implements Serializable, Copyable<GameState> {
 
             // Get Graveyard
             String graveCardInfo = currentPlayer.getGraveyard().getCards(game).stream()
-                .map(card -> card.getName())
+                .map(card -> card.getIdName())
                 .collect(Collectors.joining("; "));
             sb.append("Graveyard: [" + graveCardInfo + "]\\n");
 

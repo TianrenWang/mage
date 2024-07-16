@@ -896,20 +896,30 @@ public class ComputerPlayer6 extends ComputerPlayer {
             if (attackers.isEmpty()) {
                 return;
             }
-
-            CombatUtil.sortByPower(attackers, false);
-
-            CombatInfo combatInfo = CombatUtil.blockWithGoodTrade2(game, attackers, possibleBlockers);
             Player player = game.getPlayer(playerId);
-
             boolean blocked = false;
-            for (Map.Entry<Permanent, List<Permanent>> entry : combatInfo.getCombat().entrySet()) {
-                UUID attackerId = entry.getKey().getId();
-                List<Permanent> blockers = entry.getValue();
-                if (blockers != null) {
-                    for (Permanent blocker : blockers) {
-                        player.declareBlocker(player.getId(), blocker.getId(), attackerId, game);
+            for (Permanent blocker : possibleBlockers) {
+                List<Permanent> blockableAttackers = new ArrayList<>();
+                for (Permanent attacker : attackers){
+                    if (blocker.canBlock(attacker.getId(), game)) blockableAttackers.add(attacker);
+                }
+                if (blockableAttackers.size() > 0){
+                    String blockersIndicator = "";
+                    if (!blocked) {
+                        blockersIndicator = "Blockers:\\n";
+                    }
+                    String blockerName = blocker.getIdName();
+                    int action = game.getActionFromAgent(
+                        blockableAttackers.size() + 1,
+                        false,
+                        game.getFullState() + blockersIndicator + blockerName + "\\n"
+                    );
+                    if (action - 1 >= 0){
                         blocked = true;
+                        Permanent blockedAttacker = blockableAttackers.get(action - 1);
+                        player.declareBlocker(player.getId(), blocker.getId(), blockedAttacker.getId(), game);
+                        String block = blocker.getIdName() + " -> " + blockedAttacker.getIdName();
+                        game.logBlocker(block);
                     }
                 }
             }
@@ -983,7 +993,7 @@ public class ComputerPlayer6 extends ComputerPlayer {
                 List<Permanent> attackers = new ArrayList<>();
                 game.getBattlefield().getActivePermanents(activePlayerId, game)
                         .stream()
-                        .filter(p -> p.isCreature())
+                        .filter(p -> p.isCreature() && p.isOwnedBy(playerId))
                         .forEach(attackers::add);
 
                 for (Permanent attacker : attackers){
@@ -1005,7 +1015,7 @@ public class ComputerPlayer6 extends ComputerPlayer {
                             game.getFullState() + attackersIndicator + attackerName + "\\n"
                         );
                         if (action - 1 >= 0){
-                            if (!hasAttackers) hasAttackers = true;
+                            hasAttackers = true;
                             attackingPlayer.declareAttacker(attacker.getId(), possibleDefenderIds.get(action - 1), game, true);
                             if (action - 1 == 0) {
                                 String attack = attackerName + " -> " + game.getPlayer(defenderId).getName();
