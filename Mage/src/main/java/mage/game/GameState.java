@@ -118,6 +118,8 @@ public class GameState implements Serializable, Copyable<GameState> {
 
     private int applyEffectsCounter; // Upcounting number of each applyEffects execution
     private StringBuilder turnActions = new StringBuilder();
+    private StringBuilder turnAttackers = new StringBuilder();
+    private StringBuilder turnBlockers = new StringBuilder();
 
     public GameState() {
         players = new Players();
@@ -192,6 +194,8 @@ public class GameState implements Serializable, Copyable<GameState> {
         this.isDaytime = state.isDaytime;
         this.reverseTurnOrder = state.reverseTurnOrder;
         this.turnActions = state.turnActions;
+        this.turnAttackers = state.turnAttackers;
+        this.turnBlockers = state.turnBlockers;
     }
 
     public void clearOnGameRestart() {
@@ -1785,6 +1789,18 @@ public class GameState implements Serializable, Copyable<GameState> {
             sb.append("Actions:\\n" + actions);
         }
 
+        // Get the list of attackers this turn
+        String attackers = this.turnAttackers.toString();
+        if (!attackers.isEmpty()){
+            sb.append("Attackers:\\n" + attackers);
+        }
+
+        // Get the list of blockers this turn
+        String blockers = this.turnBlockers.toString();
+        if (!blockers.isEmpty()){
+            sb.append("Blockers:\\n" + blockers);
+        }
+
         return sb.toString();
     }
 
@@ -1844,7 +1860,17 @@ public class GameState implements Serializable, Copyable<GameState> {
         this.turnActions.append(action + "\\n");
     }
 
-    public void clearTurnActions(){
+    public void logAttacker(String attacker){
+        this.turnAttackers.append(attacker + "\\n");
+    }
+
+    public void logBlocker(String blocker){
+        this.turnBlockers.append(blocker + "\\n");
+    }
+
+    public void clearTurnLog(){
         this.turnActions.setLength(0);
+        this.turnAttackers.setLength(0);
+        this.turnBlockers.setLength(0);
     }
 }

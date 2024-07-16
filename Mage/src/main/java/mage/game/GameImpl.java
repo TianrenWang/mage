@@ -1146,7 +1146,7 @@ public abstract class GameImpl implements Game {
     }
 
     private boolean playTurn(Player player) {
-        this.state.clearTurnActions();
+        this.state.clearTurnLog();
         boolean skipTurn = false;
         do {
             if (executingRollback) {
@@ -4203,5 +4203,13 @@ public abstract class GameImpl implements Game {
 
     public void logTurnAction(String action){
         this.state.logTurnAction(action);
+    }
+
+    public void logAttacker(String attacker){
+        this.state.logAttacker(attacker);
+    }
+
+    public void logBlocker(String blocker){
+        this.state.logBlocker(blocker);
     }
 }
