@@ -77,12 +77,12 @@ public class SimulationPerformanceAITest extends CardTestPlayerBaseAI {
         addCard(Zone.LIBRARY, playerA, "Lava Spike", 4);
         addCard(Zone.LIBRARY, playerA, "Rift Bolt", 4);
         addCard(Zone.LIBRARY, playerA, "Skewer the Critics", 4);
-        addCard(Zone.LIBRARY, playerA, "Underworld Breach", 2);
+        addCard(Zone.LIBRARY, playerA, "Lightning Helix", 2);
         addCard(Zone.LIBRARY, playerA, "Mountain", 4);
         addCard(Zone.LIBRARY, playerA, "Inspiring Vantage", 4);
         addCard(Zone.LIBRARY, playerA, "Sacred Foundry", 2);
-        addCard(Zone.LIBRARY, playerA, "Bloodstained Mire", 2);
-        addCard(Zone.LIBRARY, playerA, "Wooded Foothills", 4);
+        addCard(Zone.LIBRARY, playerA, "Plains", 2);
+        addCard(Zone.LIBRARY, playerA, "Mountain", 4);
         addCard(Zone.LIBRARY, playerA, "Barbarian Ring", 1);
         addCard(Zone.LIBRARY, playerA, "Sunbaked Canyon", 3);
 
@@ -98,17 +98,17 @@ public class SimulationPerformanceAITest extends CardTestPlayerBaseAI {
         addCard(Zone.LIBRARY, playerB, "Lava Spike", 4);
         addCard(Zone.LIBRARY, playerB, "Rift Bolt", 4);
         addCard(Zone.LIBRARY, playerB, "Skewer the Critics", 4);
-        addCard(Zone.LIBRARY, playerB, "Underworld Breach", 2);
+        addCard(Zone.LIBRARY, playerB, "Lightning Helix", 2);
         addCard(Zone.LIBRARY, playerB, "Mountain", 4);
         addCard(Zone.LIBRARY, playerB, "Inspiring Vantage", 4);
         addCard(Zone.LIBRARY, playerB, "Sacred Foundry", 2);
-        addCard(Zone.LIBRARY, playerB, "Bloodstained Mire", 2);
-        addCard(Zone.LIBRARY, playerB, "Wooded Foothills", 4);
+        addCard(Zone.LIBRARY, playerB, "Plains", 2);
+        addCard(Zone.LIBRARY, playerB, "Mountain", 4);
         addCard(Zone.LIBRARY, playerB, "Barbarian Ring", 1);
         addCard(Zone.LIBRARY, playerB, "Sunbaked Canyon", 3);
 
         setStrictChooseMode(true);
-        setStopAt(20, PhaseStep.END_TURN);
+        setStopAt(120, PhaseStep.END_TURN);
         execute();
     }
 }
