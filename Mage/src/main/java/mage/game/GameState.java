@@ -1817,7 +1817,7 @@ public class GameState implements Serializable, Copyable<GameState> {
 
     private String getAbilityAndSourceInfo(Game game, Ability ability, boolean showTargets) {
         MageObject sourceObject = ability.getSourceObject(game);
-        String abilityInfo = (sourceObject == null ? "" : sourceObject.getIdName() + ": ") + CardUtil.substring(ability.toString(), 30, "...");
+        String abilityInfo = sourceObject == null ? "" : sourceObject.getIdName();
         String targetsInfo = "";
         if (showTargets) {
             List<String> allTargetsInfo = new ArrayList<>();
