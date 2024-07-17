@@ -715,7 +715,7 @@ public class ComputerPlayer6 extends ComputerPlayer {
             //throw new IllegalStateException("TODO: need implement");
         }
         MageObject sourceObject = ability.getSourceObject(game);
-        String abilityInfo = (sourceObject == null ? "" : sourceObject.getIdName() + ": ") + CardUtil.substring(ability.toString(), 30, "...");
+        String abilityInfo = sourceObject == null ? "" : sourceObject.getIdName();
         // targets
         String targetsInfo = "";
         if (showTargets) {
