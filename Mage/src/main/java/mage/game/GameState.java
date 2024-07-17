@@ -1719,13 +1719,11 @@ public class GameState implements Serializable, Copyable<GameState> {
             sb.append(currentPlayer.getName() + " - Life: " + currentPlayer.getLife() + "\\n");
 
             // Get Hand
-            String handCardInfo = currentPlayer.getHand().getCards(game).stream()
-            .map(card -> card.getName())
-            .collect(Collectors.joining("; "));
+            String handCardInfo = "[" + currentPlayer.getHand().getCards(game).stream().map(card -> card.getName()).collect(Collectors.joining("; ")) + "]";
             if (priorityPlayerId != currentPlayer.getId()){
-            handCardInfo = currentPlayer.getHand().size() + "";
+                handCardInfo = currentPlayer.getHand().size() + "";
             }
-            sb.append("Hand: [" + handCardInfo + "]\\n");
+            sb.append("Hand: " + handCardInfo + "\\n");
 
             // Get Permanents
             /*
@@ -1775,9 +1773,9 @@ public class GameState implements Serializable, Copyable<GameState> {
                     Integer count = entry.getValue();
                     libraryBuilder.append(cardName + " * " + count + "; ");
                 }
-                libraryCardInfo = libraryBuilder.toString();
+                libraryCardInfo = "[" + libraryBuilder.toString() + "]";
             }
-            sb.append("Library: [" + libraryCardInfo + "]\\n");
+            sb.append("Library: " + libraryCardInfo + "\\n");
         }
 
         // Get stack
