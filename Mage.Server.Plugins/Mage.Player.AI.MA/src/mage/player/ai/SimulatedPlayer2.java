@@ -121,7 +121,8 @@ public final class SimulatedPlayer2 extends ComputerPlayer {
             allActions.add(activatedAbility);
             return;
         }
-        int selectedOption = game.getActionFromAgent(options.size(), false, game.getFullState() + "Play Consideration: " + activatedAbility);
+        String state = game.getFullState() + "Play Consideration: " + activatedAbility + "\\n";
+        int selectedOption = game.getActionFromAgent(options.size(), false, state);
         allActions.add(options.get(selectedOption));
     }
 
