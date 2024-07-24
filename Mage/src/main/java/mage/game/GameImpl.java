@@ -4162,7 +4162,7 @@ public abstract class GameImpl implements Game {
         return this.state.getFullGameState(this);
     }
 
-    public int getActionFromAgent(int actionSize, boolean started, String state) {
+    public int getActionFromAgent(int actionSize, String state) {
         if (state.isEmpty()) state = this.state.getFullGameState(this);
         try {
             URL url = new URL("http://127.0.0.1:8000/mage/" + this.id);
@@ -4172,7 +4172,7 @@ public abstract class GameImpl implements Game {
             con.setRequestProperty("Accept", "application/json");
             con.setDoOutput(true);
 
-            String jsonInputString = String.format("{\"state\": \"%s\", \"started\": %b, \"actionSize\": %d}", state, started, actionSize);
+            String jsonInputString = String.format("{\"state\": \"%s\", \"actionSize\": %d}", state, actionSize);
 
             try (OutputStream os = con.getOutputStream()) {
                 byte[] input = jsonInputString.getBytes("utf-8");

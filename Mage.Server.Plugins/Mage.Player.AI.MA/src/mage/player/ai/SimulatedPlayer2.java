@@ -109,7 +109,7 @@ public final class SimulatedPlayer2 extends ComputerPlayer {
     protected void simulateOptions(Game game) {
         List<ActivatedAbility> playables = game.getPlayer(playerId).getPlayable(game, isSimulatedPlayer);
         if (playables.size() == 0) return;
-        int selectedPlay = game.getActionFromAgent(playables.size() + 1, false, game.getFullState());
+        int selectedPlay = game.getActionFromAgent(playables.size() + 1, game.getFullState());
         if (selectedPlay == 0) return;
         ActivatedAbility activatedAbility = playables.get(selectedPlay - 1);
         if (activatedAbility.isManaAbility()) {
@@ -122,7 +122,7 @@ public final class SimulatedPlayer2 extends ComputerPlayer {
             return;
         }
         String state = game.getFullState() + "Play Consideration: " + activatedAbility + "\\n";
-        int selectedOption = game.getActionFromAgent(options.size(), false, state);
+        int selectedOption = game.getActionFromAgent(options.size(), state);
         allActions.add(options.get(selectedOption));
     }
 

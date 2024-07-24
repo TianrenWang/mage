@@ -911,7 +911,6 @@ public class ComputerPlayer6 extends ComputerPlayer {
                     String blockerName = blocker.getIdName();
                     int action = game.getActionFromAgent(
                         blockableAttackers.size() + 1,
-                        false,
                         game.getFullState() + blockersIndicator + blockerName + "\\n"
                     );
                     if (action - 1 >= 0){
@@ -1011,7 +1010,6 @@ public class ComputerPlayer6 extends ComputerPlayer {
                         String attackerName = attacker.getIdName();
                         int action = game.getActionFromAgent(
                             possibleDefenderIds.size() + 1,
-                            false,
                             game.getFullState() + attackersIndicator + attackerName + "\\n"
                         );
                         if (action - 1 >= 0){
