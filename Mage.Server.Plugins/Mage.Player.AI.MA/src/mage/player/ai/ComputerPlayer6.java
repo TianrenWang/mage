@@ -170,10 +170,9 @@ public class ComputerPlayer6 extends ComputerPlayer {
             while (actions.peek() != null) {
                 Ability ability = actions.poll();
                 // example: ===> SELECTED ACTION for PlayerA: Play Swamp
-                logger.info(String.format("===> SELECTED ACTION for %s: %s",
-                        getName(),
-                        getAbilityAndSourceInfo(game, ability, true)
-                ));
+                String action = getName() + ": " + getAbilityAndSourceInfo(game, ability, true);
+                if (ability.toString() != "Pass") game.logTurnAction(action);
+                logger.info(String.format("===> SELECTED ACTION for %s", action));
                 if (!ability.getTargets().isEmpty()) {
                     for (Target target : ability.getTargets()) {
                         for (UUID id : target.getTargets()) {
@@ -716,7 +715,7 @@ public class ComputerPlayer6 extends ComputerPlayer {
             //throw new IllegalStateException("TODO: need implement");
         }
         MageObject sourceObject = ability.getSourceObject(game);
-        String abilityInfo = (sourceObject == null ? "" : sourceObject.getIdName() + ": ") + CardUtil.substring(ability.toString(), 30, "...");
+        String abilityInfo = sourceObject == null ? "" : sourceObject.getIdName();
         // targets
         String targetsInfo = "";
         if (showTargets) {
@@ -897,20 +896,29 @@ public class ComputerPlayer6 extends ComputerPlayer {
             if (attackers.isEmpty()) {
                 return;
             }
-
-            CombatUtil.sortByPower(attackers, false);
-
-            CombatInfo combatInfo = CombatUtil.blockWithGoodTrade2(game, attackers, possibleBlockers);
             Player player = game.getPlayer(playerId);
-
             boolean blocked = false;
-            for (Map.Entry<Permanent, List<Permanent>> entry : combatInfo.getCombat().entrySet()) {
-                UUID attackerId = entry.getKey().getId();
-                List<Permanent> blockers = entry.getValue();
-                if (blockers != null) {
-                    for (Permanent blocker : blockers) {
-                        player.declareBlocker(player.getId(), blocker.getId(), attackerId, game);
+            for (Permanent blocker : possibleBlockers) {
+                List<Permanent> blockableAttackers = new ArrayList<>();
+                for (Permanent attacker : attackers){
+                    if (blocker.canBlock(attacker.getId(), game)) blockableAttackers.add(attacker);
+                }
+                if (blockableAttackers.size() > 0){
+                    String blockersIndicator = "";
+                    if (!blocked) {
+                        blockersIndicator = "Blockers:\\n";
+                    }
+                    String blockerName = blocker.getIdName();
+                    int action = game.getActionFromAgent(
+                        blockableAttackers.size() + 1,
+                        game.getFullState() + blockersIndicator + blockerName + "\\n"
+                    );
+                    if (action - 1 >= 0){
                         blocked = true;
+                        Permanent blockedAttacker = blockableAttackers.get(action - 1);
+                        player.declareBlocker(player.getId(), blocker.getId(), blockedAttacker.getId(), game);
+                        String block = blocker.getIdName() + " -> " + blockedAttacker.getIdName();
+                        game.logBlocker(block);
                     }
                 }
             }
@@ -973,164 +981,52 @@ public class ComputerPlayer6 extends ComputerPlayer {
         game.fireEvent(new GameEvent(GameEvent.EventType.DECLARE_ATTACKERS_STEP_PRE, null, null, activePlayerId));
         if (!game.replaceEvent(GameEvent.getEvent(GameEvent.EventType.DECLARING_ATTACKERS, activePlayerId, activePlayerId))) {
             Player attackingPlayer = game.getPlayer(activePlayerId);
-
-            // check alpha strike first (all in attack to kill a player)
+            boolean hasAttackers = false;
             for (UUID defenderId : game.getOpponents(playerId)) {
-                Player defender = game.getPlayer(defenderId);
-                if (!defender.isInGame()) {
-                    continue;
-                }
+                List<Permanent> possiblePermanentDefenders = new ArrayList<>();
+                game.getBattlefield().getActivePermanents(activePlayerId, game)
+                        .stream()
+                        .filter(p -> p.canBeAttacked(null, defenderId, game))
+                        .forEach(possiblePermanentDefenders::add);
 
-                attackersList = super.getAvailableAttackers(defenderId, game);
-                if (attackersList.isEmpty()) {
-                    continue;
-                }
-                List<Permanent> possibleBlockers = defender.getAvailableBlockers(game);
-                List<Permanent> killers = CombatUtil.canKillOpponent(game, attackersList, possibleBlockers, defender);
-                if (!killers.isEmpty()) {
-                    for (Permanent attacker : killers) {
-                        attackingPlayer.declareAttacker(attacker.getId(), defenderId, game, false);
+                List<Permanent> attackers = new ArrayList<>();
+                game.getBattlefield().getActivePermanents(activePlayerId, game)
+                        .stream()
+                        .filter(p -> p.isCreature() && p.isOwnedBy(playerId))
+                        .forEach(attackers::add);
+
+                for (Permanent attacker : attackers){
+                    List<UUID> possibleDefenderIds = new ArrayList<UUID>();
+                    if (attacker.canAttack(defenderId, game)) possibleDefenderIds.add(defenderId);
+                    for (Permanent permanentDefender : possiblePermanentDefenders){
+                        UUID permanentDefenderId = permanentDefender.getId();
+                        if (attacker.canAttack(permanentDefenderId, game)) possibleDefenderIds.add(permanentDefenderId);
                     }
-                    return;
-                }
-            }
-
-            // TODO: add game simulations here to find best attackers/blockers combination
-
-            // find safe attackers (can't be killed by blockers)
-            for (UUID defenderId : game.getOpponents(playerId)) {
-                Player defender = game.getPlayer(defenderId);
-                if (!defender.isInGame()) {
-                    continue;
-                }
-                attackersList = super.getAvailableAttackers(defenderId, game);
-                if (attackersList.isEmpty()) {
-                    continue;
-                }
-                List<Permanent> possibleBlockers = defender.getAvailableBlockers(game);
-
-                // The AI will now attack more sanely.  Simple, but good enough for now.
-                // The sim minmax does not work at the moment.
-                boolean safeToAttack;
-                CombatEvaluator eval = new CombatEvaluator();
-
-                for (Permanent attacker : attackersList) {
-                    safeToAttack = true;
-                    int attackerValue = eval.evaluate(attacker, game);
-                    for (Permanent blocker : possibleBlockers) {
-                        int blockerValue = eval.evaluate(blocker, game);
-
-                        // blocker can kill attacker
-                        if (attacker.getPower().getValue() <= blocker.getToughness().getValue()
-                                && attacker.getToughness().getValue() <= blocker.getPower().getValue()) {
-                            safeToAttack = false;
+                    if (possibleDefenderIds.size() > 0){
+                        String attackersIndicator = "";
+                        if (!hasAttackers) {
+                            attackersIndicator = "Attackers:\\n";
                         }
-
-                        // attacker and blocker have the same P/T, check their overall value
-                        if (attacker.getToughness().getValue() == blocker.getPower().getValue()
-                                && attacker.getPower().getValue() == blocker.getToughness().getValue()) {
-                            if (attackerValue > blockerValue
-                                    || blocker.getAbilities().containsKey(FirstStrikeAbility.getInstance().getId())
-                                    || blocker.getAbilities().containsKey(DoubleStrikeAbility.getInstance().getId())
-                                    || blocker.getAbilities().contains(new ExaltedAbility())
-                                    || blocker.getAbilities().containsKey(DeathtouchAbility.getInstance().getId())
-                                    || blocker.getAbilities().containsKey(IndestructibleAbility.getInstance().getId())
-                                    || !attacker.getAbilities().containsKey(FirstStrikeAbility.getInstance().getId())
-                                    || !attacker.getAbilities().containsKey(DoubleStrikeAbility.getInstance().getId())
-                                    || !attacker.getAbilities().contains(new ExaltedAbility())) {
-                                safeToAttack = false;
+                        String attackerName = attacker.getIdName();
+                        int action = game.getActionFromAgent(
+                            possibleDefenderIds.size() + 1,
+                            game.getFullState() + attackersIndicator + attackerName + "\\n"
+                        );
+                        if (action - 1 >= 0){
+                            hasAttackers = true;
+                            attackingPlayer.declareAttacker(attacker.getId(), possibleDefenderIds.get(action - 1), game, true);
+                            if (action - 1 == 0) {
+                                String attack = attackerName + " -> " + game.getPlayer(defenderId).getName();
+                                game.logAttacker(attack);
+                            }
+                            else {
+                                String attack = attackerName + " -> " + possibleDefenderIds.toString().substring(1, 4);
+                                game.logAttacker(attack);
                             }
                         }
-
-                        // attacker can kill by deathtouch
-                        if (attacker.getAbilities().containsKey(DeathtouchAbility.getInstance().getId())
-                                || attacker.getAbilities().containsKey(IndestructibleAbility.getInstance().getId())) {
-                            safeToAttack = true;
-                        }
-
-                        // attacker has flying and blocker has neither flying nor reach
-                        if (attacker.getAbilities().containsKey(FlyingAbility.getInstance().getId())
-                                && !blocker.getAbilities().containsKey(FlyingAbility.getInstance().getId())
-                                && !blocker.getAbilities().containsKey(ReachAbility.getInstance().getId())) {
-                            safeToAttack = true;
-                        }
-
-                        // if any check fails, move on to the next possible attacker
-                        if (!safeToAttack) {
-                            break;
-                        }
-                    }
-
-                    // 0 power, don't bother attacking
-                    if (attacker.getPower().getValue() == 0) {
-                        safeToAttack = false;
-                    }
-
-                    // add attacker to the next list of all attackers that can safely attack
-                    if (safeToAttack) {
-                        attackersToCheck.add(attacker);
                     }
                 }
-
-                // find possible target for attack (priority: planeswalker -> battle -> player)
-                int totalPowerOfAttackers = 0;
-                int usedPowerOfAttackers = 0;
-                for (Permanent attacker : attackersToCheck) {
-                    totalPowerOfAttackers += attacker.getPower().getValue();
-                }
-
-                // TRY ATTACK PLANESWALKER + BATTLE
-                List<Permanent> possiblePermanentDefenders = new ArrayList<>();
-                // planeswalker first priority
-                game.getBattlefield().getActivePermanents(StaticFilters.FILTER_PERMANENT_PLANESWALKER, activePlayerId, game)
-                        .stream()
-                        .filter(p -> p.canBeAttacked(null, defenderId, game))
-                        .forEach(possiblePermanentDefenders::add);
-                // battle second priority
-                game.getBattlefield().getActivePermanents(StaticFilters.FILTER_PERMANENT_BATTLE, activePlayerId, game)
-                        .stream()
-                        .filter(p -> p.canBeAttacked(null, defenderId, game))
-                        .forEach(possiblePermanentDefenders::add);
-
-                for (Permanent permanentDefender : possiblePermanentDefenders) {
-                    if (usedPowerOfAttackers >= totalPowerOfAttackers) {
-                        break;
-                    }
-                    int currentCounters;
-                    if (permanentDefender.isPlaneswalker(game)) {
-                        currentCounters = permanentDefender.getCounters(game).getCount(CounterType.LOYALTY);
-                    } else if (permanentDefender.isBattle(game)) {
-                        currentCounters = permanentDefender.getCounters(game).getCount(CounterType.DEFENSE);
-                    } else {
-                        // impossible error (SBA must remove all planeswalkers/battles with 0 counters before declare attackers)
-                        throw new IllegalStateException("AI: can't find counters for defending permanent " + permanentDefender.getName(), new Throwable());
-                    }
-
-                    // attack anyway (for kill or damage)
-                    // TODO: add attackers optimization here (1 powerfull + min number of additional permanents,
-                    //  current code uses random/etb order)
-                    for (Permanent attackingPermanent : attackersToCheck) {
-                        if (attackingPermanent.isAttacking()) {
-                            // already used for another target
-                            continue;
-                        }
-                        attackingPlayer.declareAttacker(attackingPermanent.getId(), permanentDefender.getId(), game, true);
-                        currentCounters -= attackingPermanent.getPower().getValue();
-                        usedPowerOfAttackers += attackingPermanent.getPower().getValue();
-                        if (currentCounters <= 0) {
-                            break;
-                        }
-                    }
-                }
-
-                // TRY ATTACK PLAYER
-                // any remaining attackers go for the player
-                for (Permanent attackingPermanent : attackersToCheck) {
-                    if (attackingPermanent.isAttacking()) {
-                        continue;
-                    }
-                    attackingPlayer.declareAttacker(attackingPermanent.getId(), defenderId, game, true);
-                }
+                break;
             }
         }
     }

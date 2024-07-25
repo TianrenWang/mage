@@ -84,7 +84,7 @@ public final class SimulatedPlayer2 extends ComputerPlayer {
         Collections.reverse(list);
 
         // pass action
-        list.add(new PassAbility());
+        if (list.size() == 0) list.add(new PassAbility());
 
         if (logger.isTraceEnabled()) {
             for (Ability a : allActions) {
@@ -108,19 +108,42 @@ public final class SimulatedPlayer2 extends ComputerPlayer {
 
     protected void simulateOptions(Game game) {
         List<ActivatedAbility> playables = game.getPlayer(playerId).getPlayable(game, isSimulatedPlayer);
-        for (ActivatedAbility ability : playables) {
-            if (ability.isManaAbility()) {
-                continue;
-            }
-            List<Ability> options = game.getPlayer(playerId).getPlayableOptions(ability, game);
-            options = optimizeOptions(game, options, ability);
-            if (options.isEmpty()) {
-                allActions.add(ability);
-            } else {
-                for (Ability option : options) {
-                    allActions.add(option);
-                }
-            }
+        if (playables.size() == 0) return;
+        int selectedPlay = game.getActionFromAgent(playables.size() + 1, game.getFullState());
+        if (selectedPlay == 0) return;
+        ActivatedAbility activatedAbility = playables.get(selectedPlay - 1);
+        if (activatedAbility.isManaAbility()) {
+            return;
+        }
+        List<Ability> options = game.getPlayer(playerId).getPlayableOptions(activatedAbility, game);
+        normalizePlayerTargetOrder(options, game);
+        if (options.isEmpty()) {
+            allActions.add(activatedAbility);
+            return;
+        }
+        String state = game.getFullState() + "Play Consideration: " + activatedAbility + "\\n";
+        int selectedOption = game.getActionFromAgent(options.size(), state);
+        allActions.add(options.get(selectedOption));
+    }
+
+    /**
+     * Ensure that the order of player target abilities is self first then opponent.
+     * @param options
+     * @param game
+     */
+    private void normalizePlayerTargetOrder(List<Ability> options, Game game) {
+        int currentPlayerIndex = -1;
+        int opponentIndex = -1;
+        UUID opponentId = game.getOpponents(playerId).iterator().next();
+        for (int i = 0; i < options.size() ; i++) {
+            UUID targetId = options.get(i).getFirstTarget();
+            if (targetId == playerId) currentPlayerIndex = i;
+            if (targetId == opponentId) opponentIndex = i;
+        }
+        if (currentPlayerIndex != -1 && opponentIndex != -1 && currentPlayerIndex > opponentIndex){
+            Ability optionTargetingPlayer = options.get(currentPlayerIndex);
+            options.set(currentPlayerIndex, options.get(opponentIndex));
+            options.set(opponentIndex, optionTargetingPlayer);
         }
     }
 
