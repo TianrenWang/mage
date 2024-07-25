@@ -1082,6 +1082,8 @@ public abstract class GameImpl implements Game {
         // END game
         if (checkIfGameIsOver() && !isSimulation() || forcedToFinished) {
             winnerId = findWinnersAndLosers();
+            Player winner = this.state.getPlayer(winnerId);
+            getActionFromAgent(0, winner.getName() + " Victory");
             StringBuilder sb = new StringBuilder("GAME END gameId: ").append(this.getId()).append(' ');
             int count = 0;
             for (Player player : this.getState().getPlayers().values()) {
